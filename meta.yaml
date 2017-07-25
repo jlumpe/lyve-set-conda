@@ -4,17 +4,36 @@ package:
 
 about:
   home: https://github.com/jlumpe/lyve-set-conda
-  license: MIT
-  license_file: LICENSE
 
 source:
-  # Get all lksatz's repos from git
-  git_url: https://github.com/jlumpe/lyve-SET.git
-  git_rev: v1.1.4-head
-#  - git_url: https://github.com/lskatz/Schedule--SGELK.git
-#    folder: build/schedule
-#  - git_url: https://github.com/lskatz/cg-pipeline
-#    folder: lib/cg-pipeline
+  # Get all lksatz's repos from git - the Makefile does this already, but if we
+  # list them in the package source they'll get cached and not re-downloaded on
+  # every build.
+
+  # lskatz's branch has a problem regarding submodules making conda-build fail, fixed in fork
+  # Conda-build also fails with multiple git sources not all in their own folders
+  #  - git_url: https://github.com/lskatz/lyve-SET.git
+  - git_url: https://github.com/jlumpe/lyve-SET.git
+    git_rev: v1.1.4-head
+    folder: lyve-SET
+    patches:
+      - lyve-set.patch
+
+  # Replace git clone from install-SGELK step
+  - git_url: https://github.com/lskatz/Schedule--SGELK.git
+    folder: Schedule  #This is $TMPDIR in the Makefile, ensure its consistent
+
+  # Replace git clone from install-CGP step
+  - git_url: https://github.com/lskatz/cg-pipeline
+    folder: cg-pipeline
+
+# Replace download from install-phast step
+  - url: http://phast.wishartlab.com/phage_finder/DB/prophage_virus.db
+
+build:
+  skip_compile_pyc:
+    # Some scripts in this repo seem to be written for Python 2, hopefully not used
+    - opt/lyve-set/lib/cg-pipeline/*.py
 
 requirements:
   build:
