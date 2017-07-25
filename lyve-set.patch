@@ -1,0 +1,158 @@
+From 441ce912fb457ad77c3c061b0d9faade52ce8be5 Mon Sep 17 00:00:00 2001
+From: Jared Lumpe <mjlumpe@gmail.com>
+Date: Mon, 24 Jul 2017 10:04:50 -0700
+Subject: [PATCH 1/3] Patches for conda recipe
+
+---
+ Makefile | 27 +++++++++++++++++----------
+ 1 file changed, 17 insertions(+), 10 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 08ad810..a9c4d1b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -46,24 +46,29 @@ clean-symlinks:
+ 	find $(PREFIX)/scripts -maxdepth 1 -type l -exec rm -vf {} \;
+ 
+ install-SGELK:
+-	git clone https://github.com/lskatz/Schedule--SGELK.git $(TMPDIR)/Schedule
++	# Skip the git-clone, we'll add this to the sources for the recipe
++	# git clone https://github.com/lskatz/Schedule--SGELK.git $(TMPDIR)/Schedule
+ 	-mkdir -p $(PREFIX)/lib/Schedule
+ 	mv -v $(TMPDIR)/Schedule/SGELK.pm $(PREFIX)/lib/Schedule/
+ 	mv -v $(TMPDIR)/Schedule/README.md $(PREFIX)/lib/Schedule/
+-	mv -v $(TMPDIR)/Schedule/.git $(PREFIX)/lib/Schedule/
++	# mv -v $(TMPDIR)/Schedule/.git $(PREFIX)/lib/Schedule/
+ 
+ clean-SGELK:
+ 	rm -rfv $(PREFIX)/lib/Schedule
+ 
+ install-CGP:
+ 	# CGP scripts that are needed and that don't depend on CGP libraries
+-	git clone https://github.com/lskatz/cg-pipeline $(PREFIX)/lib/cg-pipeline
+-	ln -s $(PREFIX)/lib/cg-pipeline/scripts/run_assembly_isFastqPE.pl $(PREFIX)/scripts/
+-	ln -s $(PREFIX)/lib/cg-pipeline/scripts/run_assembly_trimClean.pl $(PREFIX)/scripts/
+-	ln -s $(PREFIX)/lib/cg-pipeline/scripts/run_assembly_shuffleReads.pl $(PREFIX)/scripts/
+-	ln -s $(PREFIX)/lib/cg-pipeline/scripts/run_assembly_removeDuplicateReads.pl $(PREFIX)/scripts/
+-	ln -s $(PREFIX)/lib/cg-pipeline/scripts/run_assembly_readMetrics.pl $(PREFIX)/scripts/
+-	ln -s $(PREFIX)/lib/cg-pipeline/scripts/run_assembly_metrics.pl $(PREFIX)/scripts/
++	#
++	# Skip the git-clone, we'll add this to the sources for the recipe
++	# git clone https://github.com/lskatz/cg-pipeline $(PREFIX)/lib/cg-pipeline
++	#
++	# Make these relative links
++	ln -s ../lib/cg-pipeline/scripts/run_assembly_isFastqPE.pl $(PREFIX)/scripts/
++	ln -s ../lib/cg-pipeline/scripts/run_assembly_trimClean.pl $(PREFIX)/scripts/
++	ln -s ../lib/cg-pipeline/scripts/run_assembly_shuffleReads.pl $(PREFIX)/scripts/
++	ln -s ../lib/cg-pipeline/scripts/run_assembly_removeDuplicateReads.pl $(PREFIX)/scripts/
++	ln -s ../lib/cg-pipeline/scripts/run_assembly_readMetrics.pl $(PREFIX)/scripts/
++	ln -s ../lib/cg-pipeline/scripts/run_assembly_metrics.pl $(PREFIX)/scripts/
+ 
+ clean-CGP:
+ 	rm -rvf $(PREFIX)/lib/cg-pipeline
+@@ -104,7 +109,9 @@ clean-snpEff:
+ 
+ install-phast: check-blast
+ 	mkdir -p $(PREFIX)/lib/phast
+-	wget http://phast.wishartlab.com/phage_finder/DB/prophage_virus.db -O $(PREFIX)/lib/phast/phast.faa
++	# This gets downloaded as one of the source files in meta.yaml, so it will be cached
++	# wget http://phast.wishartlab.com/phage_finder/DB/prophage_virus.db -O $(PREFIX)/lib/phast/phast.faa
++	mv $(TMPDIR)/prophage_virus.db $(PREFIX)/lib/phast/phast.faa
+ 	makeblastdb -in $(PREFIX)/lib/phast/phast.faa -dbtype prot
+ 
+ clean-phast:
+-- 
+2.7.4
+
+
+From 16df94a3510b5431593d9f70fd655297b822b925 Mon Sep 17 00:00:00 2001
+From: Jared Lumpe <mjlumpe@gmail.com>
+Date: Tue, 25 Jul 2017 10:50:45 -0700
+Subject: [PATCH 2/3] Additional changes to makefile after changes to source
+ directories
+
+---
+ Makefile | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index a9c4d1b..fea418d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -7,6 +7,9 @@ PROJECT := "setTestProject"
+ NUMCPUS := 1
+ SHELL   := /bin/bash
+ 
++# Directory for additional source files - e.g. git repos cloned by CONDA
++SRCDIR := ..
++
+ # Derived variables
+ TMPDIR := $(PREFIX)/build
+ TMPTARFILE=$(TMPDIR)/$(TARFILE)
+@@ -46,12 +49,12 @@ clean-symlinks:
+ 	find $(PREFIX)/scripts -maxdepth 1 -type l -exec rm -vf {} \;
+ 
+ install-SGELK:
+-	# Skip the git-clone, we'll add this to the sources for the recipe
++	# Skip the git-clone, we'll add this to the sources for the recipe and put it in SRCDIR
+ 	# git clone https://github.com/lskatz/Schedule--SGELK.git $(TMPDIR)/Schedule
+ 	-mkdir -p $(PREFIX)/lib/Schedule
+-	mv -v $(TMPDIR)/Schedule/SGELK.pm $(PREFIX)/lib/Schedule/
+-	mv -v $(TMPDIR)/Schedule/README.md $(PREFIX)/lib/Schedule/
+-	# mv -v $(TMPDIR)/Schedule/.git $(PREFIX)/lib/Schedule/
++	mv -v $(SRCDIR)/Schedule/SGELK.pm $(PREFIX)/lib/Schedule/
++	mv -v $(SRCDIR)/Schedule/README.md $(PREFIX)/lib/Schedule/
++	# mv -v $(SRCDIR)/Schedule/.git $(PREFIX)/lib/Schedule/
+ 
+ clean-SGELK:
+ 	rm -rfv $(PREFIX)/lib/Schedule
+@@ -62,6 +65,9 @@ install-CGP:
+ 	# Skip the git-clone, we'll add this to the sources for the recipe
+ 	# git clone https://github.com/lskatz/cg-pipeline $(PREFIX)/lib/cg-pipeline
+ 	#
++	# Instead, let's move it from SRCDIR where we cloned it
++	mv -v $(SRCDIR)/cg-pipeline $(PREFIX)/lib/cg-pipeline
++	#
+ 	# Make these relative links
+ 	ln -s ../lib/cg-pipeline/scripts/run_assembly_isFastqPE.pl $(PREFIX)/scripts/
+ 	ln -s ../lib/cg-pipeline/scripts/run_assembly_trimClean.pl $(PREFIX)/scripts/
+@@ -111,7 +117,7 @@ install-phast: check-blast
+ 	mkdir -p $(PREFIX)/lib/phast
+ 	# This gets downloaded as one of the source files in meta.yaml, so it will be cached
+ 	# wget http://phast.wishartlab.com/phage_finder/DB/prophage_virus.db -O $(PREFIX)/lib/phast/phast.faa
+-	mv $(TMPDIR)/prophage_virus.db $(PREFIX)/lib/phast/phast.faa
++	mv $(SRCDIR)/prophage_virus.db $(PREFIX)/lib/phast/phast.faa
+ 	makeblastdb -in $(PREFIX)/lib/phast/phast.faa -dbtype prot
+ 
+ clean-phast:
+-- 
+2.7.4
+
+
+From 6e1b1368c786a2718788e3dd16d1100dc44bd035 Mon Sep 17 00:00:00 2001
+From: Jared Lumpe <mjlumpe@gmail.com>
+Date: Tue, 25 Jul 2017 11:15:10 -0700
+Subject: [PATCH 3/3] Conda-build complains if you move a git directory
+
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index fea418d..6111648 100644
+--- a/Makefile
++++ b/Makefile
+@@ -65,8 +65,8 @@ install-CGP:
+ 	# Skip the git-clone, we'll add this to the sources for the recipe
+ 	# git clone https://github.com/lskatz/cg-pipeline $(PREFIX)/lib/cg-pipeline
+ 	#
+-	# Instead, let's move it from SRCDIR where we cloned it
+-	mv -v $(SRCDIR)/cg-pipeline $(PREFIX)/lib/cg-pipeline
++	# Instead, let's copy it from SRCDIR where we cloned it
++	cp -rv $(SRCDIR)/cg-pipeline $(PREFIX)/lib/cg-pipeline
+ 	#
+ 	# Make these relative links
+ 	ln -s ../lib/cg-pipeline/scripts/run_assembly_isFastqPE.pl $(PREFIX)/scripts/
+-- 
+2.7.4
+
