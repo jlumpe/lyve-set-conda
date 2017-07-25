@@ -29,7 +29,7 @@ WRAPPER_SCRIPT = '''\
 # Wrapper script around Lyve-SET commands
 
 # Parent directory of script directory
-ENV_DIR=$(dirname(dirname(readlink -f0)))
+ENV_DIR=$(dirname(dirname(readlink -f $0)))
 
 export LYVESET_DIR="$ENV_DIR/{INSTALL_DIR}"
 export PATH="$LYVESET_DIR/scripts:$PATH"
@@ -60,7 +60,7 @@ fi
 
 
 def log(string, *args, **kwargs):
-	print('\n@@ ' + string.format(*args, **kwargs))
+	print('\n@@', string.format(*args, **kwargs), '\n')
 
 
 def cmd(*args, export=None):
@@ -124,7 +124,7 @@ def build(work_dir, prefix, dirty=False):
 	# Directory to install to
 	install_dir = os.path.join(prefix, INSTALL_DIR)
 
-	log('Installing to {}', INSTALL_DIR)
+	log('Installing to {}', install_dir)
 	cmd('mkdir', '-p', install_dir)
 
 	# Copy files
