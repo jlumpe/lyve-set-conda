@@ -1,0 +1,38 @@
+# Use bash as language because we're using Python from miniconda install
+language: bash
+
+# No email notifications
+notifications:
+    email: false
+
+# Build on Ubuntu 14.04
+os: linux
+dist: trusty
+
+# Only run travis on the master branch
+branches:
+    only:
+        - master
+
+install:
+  # Download and install miniconda
+  # From https://conda.io/docs/user-guide/tasks/use-conda-with-travis-ci.html
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  # Download conda-build
+  - conda install conda-build
+
+  # Build the package
+  - conda-build .
+
+# Run tests
+script:
+    #"python -m pytest -v"
+
