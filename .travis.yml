@@ -30,7 +30,7 @@ install:
   - conda install conda-build
 
   # Build the package
-  - conda-build .
+  - conda-build -c conda-forge -c bioconda .
 
 # Run tests
 script:
