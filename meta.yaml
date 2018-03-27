@@ -37,7 +37,7 @@ build:
 
 requirements:
   build:
-    - cmake
+    - make
     - git
     - wget
     - blast  # For install-phast step
