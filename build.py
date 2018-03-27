@@ -4,7 +4,14 @@ import os
 import subprocess as sp
 
 
-BASE_MAKE_RULES = ['install-SGELK', 'install-CGP', 'install-mkdir', 'install-perlModules', 'install-config']
+# Make rules to run
+BASE_MAKE_RULES = [
+	'install-mkdir',
+	'install-SGELK',
+	'install-CGP',
+	'install-perlModules',
+	'install-config'
+]
 EXPENSIVE_MAKE_RULES = ['install-phast']
 
 
@@ -18,6 +25,7 @@ INSTALL_FILES = [
 	'lib',
 	'plugins',
 	'docs',
+	'README.md',
 	'LICENSE',
 ]
 
@@ -59,12 +67,26 @@ fi
 '''.format(INSTALL_DIR=INSTALL_DIR)
 
 
-def log(string, *args, **kwargs):
-	print('\n@@', string.format(*args, **kwargs), '\n')
+def log(message, *args, **kwargs):
+	"""Write line to stdout with recognizable prefix.
+
+	:param str message: Message to write
+	:param \\**args: Positional arguments to format message with.
+	:param \\**kwargs: Keyword arguments to format message with.
+	"""
+	print('\n@@', message.format(*args, **kwargs), '\n')
 
 
-def cmd(*args, export=None):
+def cmd(*args, **export):
+	"""Run a command in a subprocess.
 
+	Prints command before executing.
+
+	:param \\*args: Command and its arguments.
+	:param \\**export: Environment variables to export.
+	"""
+
+	# Print the command
 	msg = '$'
 
 	if export is not None:
@@ -76,19 +98,49 @@ def cmd(*args, export=None):
 
 	log(msg)
 
+	# Environment variables
 	env = None
 	if export is not None:
 		env = dict(os.environ)
 		env.update(export)
 
+	# Run
 	p = sp.Popen(args, env=env)
-	code = p.wait()
+	rcode = p.wait()
 
-	if code != 0:
-		raise RuntimeError('Command exited with non-zero code.')
+	# Check exit code
+	if rcode:
+		raise RuntimeError(
+			'Process returned non-zero exit code: {}'
+			.format(rcode)
+		)
+
+
+def make_symlink_relative(path):
+	"""Replace a symbolic link with a relative one.
+
+	:param str path: Path to symbolic link.
+	"""
+	assert os.path.islink(path)
+	target = os.readlink(path)
+
+	# Skip if already relative
+	if not os.path.isabs(target):
+		return
+
+	rel = os.path.relpath(target, os.path.dirname(path))
+	os.unlink(path)
+	os.symlink(rel, path)
 
 
 def build(work_dir, prefix, dirty=False):
+	"""Run the build process.
+
+	:param str work_dir: Working directory containing the repo's source code.
+	:param str prefix: Path to install to (should already exist).
+	:param bool dirty: Whether the build process has already been run in this
+		directory.
+	"""
 
 	log('Beginning build process')
 
@@ -98,7 +150,10 @@ def build(work_dir, prefix, dirty=False):
 	make_rules = BASE_MAKE_RULES[:]
 
 	if dirty:
-		log('--dirty is set, skipping the following make rules: ' + ' '.join(EXPENSIVE_MAKE_RULES))
+		log(
+			'--dirty is set, skipping the following make rules: {}',
+			' '.join(EXPENSIVE_MAKE_RULES),
+		)
 	else:
 		make_rules += EXPENSIVE_MAKE_RULES
 
@@ -110,16 +165,8 @@ def build(work_dir, prefix, dirty=False):
 	log('Fixing symlinks...')
 	for fname in os.listdir('scripts'):
 		fpath = os.path.join('scripts', fname)
-
 		if os.path.islink(fpath):
-
-			abspath = os.readlink(fpath)
-			if not os.path.isabs(abspath):
-				continue
-			relpath = os.path.relpath(abspath, 'scripts')
-
-			os.unlink(fpath)
-			os.symlink(relpath, fpath)
+			make_symlink_relative(fpath)
 
 	# Directory to install to
 	install_dir = os.path.join(prefix, INSTALL_DIR)
@@ -131,7 +178,12 @@ def build(work_dir, prefix, dirty=False):
 	log('Copying files...')
 
 	for file in INSTALL_FILES:
-		cmd('cp', '-r', os.path.join(work_dir, file), os.path.join(install_dir, file))
+		cmd(
+			'cp',
+			'-r',
+			os.path.join(work_dir, file),
+			os.path.join(install_dir, file),
+		)
 
 	# Create and install wrapper script
 	script_path = os.path.join(prefix, 'bin', 'lyve-set')
@@ -147,4 +199,5 @@ if __name__ == '__main__':
 	if os.environ.get('CONDA_BUILD') != '1':
 		raise RuntimeError('CONDA_BUILD environment variable not set')
 
-	build(os.getcwd(), os.environ['PREFIX'], dirty=os.environ.get('DIRTY', '') == '1')
+	dirty = os.environ.get('DIRTY', '') == '1'
+	build(os.getcwd(), os.environ['PREFIX'], dirty=dirty)
