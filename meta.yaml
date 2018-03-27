@@ -10,7 +10,8 @@ source:
   # list them in the package source they'll get cached and not re-downloaded on
   # every build.
 
-  # lskatz's branch has a problem regarding submodules making conda-build fail, fixed in fork
+  # lskatz's branch has a problem regarding submodules making conda-build fail,
+  # fixed in fork
   # Conda-build also fails with multiple git sources not all in their own folders
   #  - git_url: https://github.com/lskatz/lyve-SET.git
   - git_url: https://github.com/jlumpe/lyve-SET.git
@@ -21,7 +22,7 @@ source:
 
   # Replace git clone from install-SGELK step
   - git_url: https://github.com/lskatz/Schedule--SGELK.git
-    folder: Schedule  #This is $TMPDIR in the Makefile, ensure its consistent
+    folder: Schedule  #This is $TMPDIR in the Makefile, ensure it's consistent
 
   # Replace git clone from install-CGP step
   - git_url: https://github.com/lskatz/cg-pipeline
@@ -40,9 +41,11 @@ requirements:
     - make
     - git
     - wget
+    - perl
     - blast  # For install-phast step
   run:
-    # Most of these are in the bioconda channel
+    - perl
+    # The rest are in the bioconda channel:
     - vcftools >=0.1.14
     - varscan >=2.3.7
     - snpeff
