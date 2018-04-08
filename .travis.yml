@@ -32,6 +32,9 @@ install:
   # Build the package
   - conda-build -c conda-forge -c bioconda .
 
+  # Install the package
+  - conda install --use-local lyve-set
+
 # Run tests
 script:
     #"python -m pytest -v"
