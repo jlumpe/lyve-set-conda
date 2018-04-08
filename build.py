@@ -30,43 +30,6 @@ INSTALL_FILES = [
 ]
 
 
-# Contents of wrapper script
-WRAPPER_SCRIPT = '''\
-#!/bin/bash
-
-# Wrapper script around Lyve-SET commands
-
-# Parent directory of script directory
-ENV_DIR=$(dirname(dirname(readlink -f $0)))
-
-export LYVESET_DIR="$ENV_DIR/{INSTALL_DIR}"
-export PATH="$LYVESET_DIR/scripts:$PATH"
-
-if [# -eq 0 ]; then
-	# No arguments, print usage and available commands
-
-	cat <<- EOF
-	Wrapper around Lyve-SET scripts
-
-	usage:(basename0) COMMAND [COMMAND_ARGS...]
-
-
-	Available Lyve-SET commands:
-
-	EOF
-	ls "$LYVESET_DIR/scripts" | sort
-
-else
-	# Run command
-
-	CMD=$1
-	shift
-	"$LYVESET_DIR/scripts/$CMD" "$@"
-
-fi
-'''.format(INSTALL_DIR=INSTALL_DIR)
-
-
 def log(message, *args, **kwargs):
 	"""Write line to stdout with recognizable prefix.
 
@@ -185,14 +148,15 @@ def build(work_dir, prefix, dirty=False):
 			os.path.join(install_dir, file),
 		)
 
-	# Create and install wrapper script
-	script_path = os.path.join(prefix, 'bin', 'lyve-set')
+	# Install wrapper script
+	script_src = os.path.join(work_dir, 'wrapper.sh')
+	script_dst = os.path.join(prefix, 'bin', 'lyve-set')
 
-	log('Writing wrapper script to ' + script_path + '...')
-	with open(script_path, 'w') as fobj:
-		fobj.write(WRAPPER_SCRIPT)
+	cmd('cp', script_src, script_dst)
+	cmd('chmod', '+x', script_dst)
 
-	cmd('chmod', '+x', script_path)
+	# Done
+	log('Install script completed successfully')
 
 
 if __name__ == '__main__':
