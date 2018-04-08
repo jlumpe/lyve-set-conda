@@ -124,6 +124,10 @@ def build(work_dir, prefix, dirty=False):
 	log('Running Makefile...')
 	cmd('make', *make_rules)
 
+	# Run "check" rule to check dependencies
+	log('Checking dependencies...')
+	cmd('make', 'check')
+
 	# Convert absolute symlink paths to relative paths
 	log('Fixing symlinks...')
 	for fname in os.listdir('scripts'):
